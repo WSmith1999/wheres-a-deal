@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title> Where's A Deal.com <title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+        <h1>Grocery Store Prices</h1>
+        <a href="/">Home Page</a>
+
+        {% if product | length < 1 %}
+        <h3>There are no items added currently<h3>
+        {% else %}
+        <table>
+            <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Store</th>
+                <th>City</th> 
+                <th>Actions</th>
+            </tr>
+            {% for price in price %}
+                <tr>
+                    <td>
+                        {{ price.product.content}}
+                    </td>
+                    <td>
+                        ${{ price.price}}
+                    </td>
+                    <td>
+                        {{ price.store.chain }}
+                    </td>
+                    <td>
+                        {{price.store.city}}
+                    </td>
+                    <td>
+                    <a href="/delete/{{price.id}}">Delete</a>
+                    <a href="/update/{{price.id}}">Update</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+
+        <form action="/admin" method="POST">
+            <input type="text" name="content" value="item" id="content"/>
+            <input type="text" name="zipcode" value="zipcode" id="zipcode"/>
+            <input type="submit" value="Add" id="btn_add"/>
+        </form>
+    </div>
+{% endblock %}

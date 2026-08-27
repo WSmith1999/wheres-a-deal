@@ -1,10 +1,9 @@
 import requests
 import os
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 import base64
 
-load_dotenv()
-
+config = dotenv_values(".env")
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")

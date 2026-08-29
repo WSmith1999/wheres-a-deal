@@ -1,12 +1,13 @@
 import requests
 import os
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 import base64
 
-config = dotenv_values(".env")
+load_dotenv()
 
-client_id = config["CLIENT_ID"]
-client_secret = config["CLIENT_SECRET"]
+
+client_id = os.getenv("CLIENT_ID")
+client_secret = os.getenv("CLIENT_SECRET")
 auth_url = "https://api.kroger.com/v1/connect/oauth2/token"
 base_url = "https://api.kroger.com/v1"
 credentials = f"{client_id}:{client_secret}"

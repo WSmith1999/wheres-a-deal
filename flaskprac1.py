@@ -238,6 +238,6 @@ if __name__ == "__main__":
     #use this to create database
     with app.app_context():
         db.create_all()
-    #this created database
-    app.run(debug=True)
+    
+    app.run(host="0.0.0.0", port=5000, debug=True)
 

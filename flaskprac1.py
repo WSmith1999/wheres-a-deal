@@ -182,7 +182,7 @@ def fetch_product(token, product, zipcode):
     if not api_results["data"]:
         return None
     api_product = api_results["data"][:4]
-    print(api_product[0])
+    
     for product in api_product:
         product["locationId"] = locationid
         product["chain_name"] = chain_name
@@ -238,6 +238,6 @@ if __name__ == "__main__":
     #use this to create database
     with app.app_context():
         db.create_all()
-    
+    ## use host = 0.0.0.0 and 5000 to allow any ip to access with ec2
     app.run(host="0.0.0.0", port=5000, debug=True)
 

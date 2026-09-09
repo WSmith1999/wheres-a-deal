@@ -1,5 +1,5 @@
 #Imports
-from flask import Flask , render_template, redirect, request
+from flask import Flask , render_template, redirect, request, session, flash
 from flask_scss import Scss
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -8,6 +8,9 @@ import requests
 from apipractice import get_token, api_search, location_search, id_specific_search
 from dotenv import load_dotenv
 import os
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
+
 
 load_dotenv()
 client_id = os.getenv("CLIENT_ID")
@@ -16,9 +19,11 @@ token = get_token()
 
 #app setup
 app = Flask(__name__)
+app.secret_key = os.getenv("app_secret_key")
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///grocery.db"
 db = SQLAlchemy(app)
 Scss(app)
+
 
 #data class aka row of data,, why not self why dbmodel, ask to explain. also ask why content and how it works and links together , where does it come from initially and how does it link together
 class Product(db.Model):
@@ -44,32 +49,109 @@ class Price(db.Model):
     size=db.Column(db.String(50))
     u_o_m=db.Column(db.String(50))
 
+class Users(db.Model):
+    id=db.Column(db.Integer, primary_key=True)
+    username=db.Column(db.String(50), unique=True, nullable=False)
+    email=db.Column(db.String(50), unique=True, nullable=False)
+    password_hash=db.Column(db.String(150))
+    admin=db.Column(db.Boolean, default=False)
+
+
+    @property
+    def password(self):
+        raise AttributeError("Passwords are not a readable attribute")
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def password_check(self, password):
+        return check_password_hash(self.password_hash, password)
+
+class Alerts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"))
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
+    target_price = db.Column(db.Integer, nullable=True)
+    active = db.Column(db.Boolean, default=False)
+    product = db.relationship("Product", backref="alerts")
+    store = db.relationship("Store", backref="alerts")
+    email = db.Column(db.String(50), nullable=False)
+    user = db.relationship("Users", backref="alerts")
+
 ##admin page, THIS WAS HOME
 @app.route("/admin",methods=["POST","GET"])
-
 def admin():
+    if "user_id" not in session:
+        return redirect("/adminlogin")
 
-    ##add a task  research later whats going on with new task being current task, ask where task came from and how this shit is getting in the database
+    user = db.session.get(Users, session["user_id"])
+
+    if not user.admin:
+        return redirect("/adminlogin")
+    
+    product = Product.query.all()
+    store = Store.query.all()
+    price = Price.query.all()
+    users = Users.query.all()
+    alerts = Alerts.query.all()
+    return render_template("admin.html", product=product, store=store, price=price, users=users, alerts=alerts)
+
+@app.route("/adminlogin", methods=["POST","GET"])
+def adlogin():
     if request.method == "POST":
-        try:
-            current_product= request.form["content"].lower().strip()
-            zipcode = request.form["zipcode"]
-            api_data = fetch_product(token, current_product, zipcode)
-            
-            save_to_db(api_data, current_product)
+        username = request.form["username"]
+        password = request.form["password"]
+        user = Users.query.filter_by(username=username).first()
+        if user and user.password_check(password) and user.admin:
+            session["user_id"]=user.id
             return redirect("/admin")
-        except Exception as e:
-            print(f"ERROR {e}")
-            return f"ERROR {e}"
-    ## see current tasks
-    else:
-        product = Product.query.all()
-        #print(product)
-        store = Store.query.all()
-        #print(store)
-        price = Price.query.all()
-        #print(price)
-        return render_template("admin.html", product=product, store=store, price=price)
+        
+    return render_template("adminlogin.html", message="please login to view admin page")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        user = Users.query.filter_by(username=username).first()
+        if user and user.password_check(password):
+            session["user_id"] = user.id
+            return redirect("/")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("user_id", None)
+    return redirect("/")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+     if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        email = request.form["email"]
+        existing_username = Users.query.filter_by(username=username).first()
+        existing_email = Users.query.filter_by(email=email).first()
+
+        if existing_username:
+            return render_template("register.html", message="Username already exists")
+        
+        if existing_email:
+            return render_template("register.html", message="Email already exists")
+        
+        user = Users(
+            username = username,
+            password = password,
+            email = email
+        )
+
+        db.session.add(user)
+        db.session.commit()
+        session["user_id"] = user.id
+        return render_template("index.html", message = "Account created")
+     return render_template("register.html")
 
 ## delete an item
 @app.route("/delete/<int:id>")
@@ -81,7 +163,27 @@ def delete(id:int):
         return redirect("/admin")
     except Exception as e:
         return f"ERROR {e}"
-    
+
+@app.route("/delete-user/<int:id>")
+def delete_user(id:int):   
+    delete_user = Users.query.get_or_404(id)
+    try:
+        db.session.delete(delete_user)
+        db.session.commit()
+        return redirect("/admin")
+    except Exception as e:
+        return f"ERROR {e}"
+
+@app.route("/delete-alert/<int:id>")
+def delete_alert(id:int):   
+    delete_alert = Alerts.query.get_or_404(id)
+    try:
+        db.session.delete(delete_alert)
+        db.session.commit()
+        return redirect("/alerts")
+    except Exception as e:
+        return f"ERROR {e}"
+
 ## edit an item , make sure the route matches the route in HTML and the method
 @app.route("/update/<int:id>", methods=["GET", "POST"])
 def update(id:int):
@@ -114,7 +216,7 @@ def home():
     api_data = fetch_product(token, search_term, zipcode)
     if not api_data:
         return render_template("index.html", message="enter a valid search term")
-    #searched_price = save_to_db(api_data, search_term)
+    
         
     return render_template("index.html", products=api_data, search_term=search_term)
 
@@ -126,11 +228,9 @@ def select_price():
     chain_name= request.args.get("chain_name")
     search_term = request.args.get("search_term")
     city= request.args.get("city")
-    print("ITEM ID:", item_id)
-    print("LOCATION ID:", locationid)
-    print(request.args)
     api_data = id_specific_search(token, item_id, locationid)
     api_product = api_data["data"][0]
+
 
     product_name = api_product["description"]
     price = api_product["items"][0]["price"]["regular"]
@@ -188,7 +288,7 @@ def fetch_product(token, product, zipcode):
         product["chain_name"] = chain_name
         product["city"] = city
     return api_product
-   
+
     
 def save_to_db(api_data,search_term):
         try:
@@ -230,8 +330,66 @@ def save_to_db(api_data,search_term):
         except Exception as e:
             print(f"ERROR {e}")
             return f"ERROR {e}"
+
+@app.route("/create-alert", methods=["GET", "POST"])
+def create_alert():
+    if "user_id" not in session:
+        flash("Please login to create alerts")
+        return redirect("/login")
+
+    user_id = session["user_id"]
     
+    if request.method == "POST":
+        product_id = request.form["product_id"]
+        store_id = request.form["store_id"]
+        target_price = request.form["target_price"]
+        email = request.form["email"]
+        alert = Alerts(
+            product_id = product_id,
+            user_id = user_id,
+            store_id = store_id,
+            target_price = target_price,
+            email = email,
+            active = True
+            )
+        db.session.add(alert)
+        db.session.commit()
+        return render_template("index.html", message = "Alert sucessfully created!")
+
+@app.route("/alerts")
+def alerts():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    get_alert_status()
     
+    user_id = session["user_id"]
+    username = Users.query.get(user_id)
+    user_alerts = Alerts.query.filter_by(user_id=user_id).all()
+    return render_template("alerts.html", alerts=user_alerts, username=username)
+
+    
+def get_alert_status():
+    alerts = Alerts.query.filter_by(active=True).all()
+    for alert in alerts:
+        check_alert(alert)
+    
+
+def check_alert(alert):
+    price = Price.query.filter_by(product_id = alert.product_id, store_id = alert.store_id).first()
+    product= alert.product.content
+    current_price = price.price
+    if current_price <= alert.target_price:
+        alert.active = False
+        db.session.commit()
+        alert_message(alert, product, price)
+
+
+def alert_message(alert, product, price):
+        message = f"Price Alert! {product} is on sale for ${price.price}!"
+        print(message)
+        return message
+
 
 ##runner and debugger
 if __name__ == "__main__":

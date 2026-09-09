@@ -8,6 +8,15 @@
     <title>Document</title>
 </head>
 <body>
-    {%block body%}{%endblock%}
+     <div class="logout-button">
+     <a href="/logout">Logout</a>
+     </div>
+     {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+     {% endwith %}
+    {%block body%}
+    {%endblock%}
 </body>
 </html>

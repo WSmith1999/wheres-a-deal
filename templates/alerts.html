@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>View and Delete Alerts</title>
+{% endblock %}
+
+{% block body %}
+<h1> View and delete your active alerts</h1>
+<h4> Welcome back {{username.username}}</h4>
+<div class="nav-buttons" >
+    <a href="/">Home</a>
+</div>
+{% if alerts | length < 1 %}
+    <p> You have no active alerts </p>
+
+{% else %}
+    {% for alert in alerts %}
+        <tr>
+            <td>{{alert.product.content}}</td>
+            <td>{{alert.store.chain}}, {{alert.store.city}}</td>
+            <td>${{"%.2f"|format(alert.target_price)}}</td>
+            <td>{{alert.email}}</td>
+            <td>
+                <a href="/delete-alert/{{alert.id}}">Delete Alert</a>
+            </td>
+        </tr>
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

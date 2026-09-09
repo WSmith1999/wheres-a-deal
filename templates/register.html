@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Register</title>
+{% endblock %}
+
+{% block body %}
+<div class="login">
+    <h1>Registration Page</h1>
+    <p>{{message}}</p>
+    <div class="nav-buttons" >
+        <a href="/login">Login</a>
+    </div>
+    <form action="/register" method="POST">
+        <input type="text" name="username" placeholder="Think of a username" id="username"> 
+        <input type="email" name="email" placeholder="Enter your email" id="email">
+        <input type="password" name="password" placeholder="password" id="password">
+        <button type="submit" name="submit" id="btn-submit">Submit</button>
+    </form>
+</div>
+{% endblock %}

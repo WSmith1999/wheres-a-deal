@@ -7,9 +7,13 @@
 {% block body  %}
      <h1> Where's A Deal?</h1>
      <h4>Will you find a good deal?</h4>
-     <a href= "/admin">Admin Page</a>
-
+     <div class="nav-buttons">
+     <a href= "/adminlogin">Admin Page</a>
+     <a href= "/login">Login</a>
+     <a href= "/alerts">Alerts</a>
+     </div>
      <p>{{message}}<p>
+
 
      <form action="/" method="GET">
         <input type="text" name="search" value="search item" id="search"/>
@@ -36,10 +40,23 @@
       <tr>
          <td>{{price.product.content}}</td>
          <td>{{price.size}}</td>
-         <td>${{price.price}}</td>
+         <td>${{"%.2f"|format(price.price)}}</td>
          <td>{{price.u_o_m}}</td>
          <td>{{price.store.chain}}</td>
          <td>{{price.store.city}}</td>
+         <details>
+            <summary>Create Price Alert</summary>
+            <td>
+      
+               <form action="/create-alert", method="POST">
+                  <input type="hidden" name=product_id value="{{price.product.id}}">
+                  <input type="hidden" name=store_id value="{{price.store.id}}">
+                  <input type="number" name="target_price" placeholder="Enter target price" step="0.01">
+                  <input type="email" name="email" placeholder="Enter email for alerts">
+                  <button type="submit">Set Alert</button>
+               </form>
+            </td>
+         </details>
       </tr>
       {% endfor %}
      {% endif %}

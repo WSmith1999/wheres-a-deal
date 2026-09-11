@@ -70,9 +70,9 @@ class Users(db.Model):
 
 class Alerts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    product_id = db.Column(db.Integer, db.ForeignKey("product.id"))
-    store_id = db.Column(db.Integer, db.ForeignKey("store.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
     target_price = db.Column(db.Integer, nullable=True)
     active = db.Column(db.Boolean, default=False)
     product = db.relationship("Product", backref="alerts")

@@ -38,7 +38,7 @@
      {% if searched_price%}
       {% for price in searched_price %}
       <tr>
-         <td>{{price.product.content}}</td>
+         <td>{{price.product.name}}</td>
          <td>{{price.size}}</td>
          <td>${{"%.2f"|format(price.price)}}</td>
          <td>{{price.u_o_m}}</td>

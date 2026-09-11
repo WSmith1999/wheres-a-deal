@@ -25,14 +25,14 @@ db = SQLAlchemy(app)
 Scss(app)
 
 
-#data class aka row of data,, why not self why dbmodel, ask to explain. also ask why content and how it works and links together , where does it come from initially and how does it link together
+
 class Product(db.Model):
     id=db.Column(db.Integer, primary_key=True)
-    content=db.Column(db.String(100), nullable=False)
+    name=db.Column(db.String(100), nullable=False)
     prices= db.relationship("Price", backref="product")
     search_term= db.Column(db.String(100))
     def __repr__(self) -> str:
-        return f"Product {self.id}: {self.content}"
+        return f"Product {self.id}: {self.name}"
 
 class Store(db.Model):
     id=db.Column(db.Integer, primary_key=True)
@@ -79,6 +79,7 @@ class Alerts(db.Model):
     store = db.relationship("Store", backref="alerts")
     email = db.Column(db.String(50), nullable=False)
     user = db.relationship("Users", backref="alerts")
+
 
 ##admin page, THIS WAS HOME
 @app.route("/admin",methods=["POST","GET"])
@@ -180,7 +181,7 @@ def delete_alert(id:int):
     try:
         db.session.delete(delete_alert)
         db.session.commit()
-        return redirect("/alerts")
+        return redirect(request.referrer or "/alerts")
     except Exception as e:
         return f"ERROR {e}"
 
@@ -254,6 +255,7 @@ def select_price():
 
     searched_price = save_to_db(selected_data, search_term)
     return render_template("index.html", searched_price = searched_price )
+
 ## homemade search function
 def search(search_term):
     results = Price.query.join(Product).join(Store).filter(
@@ -298,7 +300,7 @@ def save_to_db(api_data,search_term):
                 return Price.query.filter_by(product_id=product.id).all()
 
             product = Product(
-                content=api_data["product_name"],
+                name=api_data["product_name"],
                 search_term = search_term
             )
             db.session.add(product)
@@ -329,7 +331,7 @@ def save_to_db(api_data,search_term):
             
         except Exception as e:
             print(f"ERROR {e}")
-            return f"ERROR {e}"
+            raise
 
 @app.route("/create-alert", methods=["GET", "POST"])
 def create_alert():
@@ -377,8 +379,11 @@ def get_alert_status():
 
 def check_alert(alert):
     price = Price.query.filter_by(product_id = alert.product_id, store_id = alert.store_id).first()
-    product= alert.product.content
+    product= alert.product.name
     current_price = price.price
+    if price is None:
+        return
+    
     if current_price <= alert.target_price:
         alert.active = False
         db.session.commit()

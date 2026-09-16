@@ -1,14 +1,14 @@
 #Imports
 from flask import Flask , render_template, redirect, request, session, flash
 from flask_scss import Scss
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from sqlalchemy import or_
 import requests
 from apipractice import get_token, api_search, location_search, id_specific_search
+from models import db, Product, Store, Price, Users, Alerts
+from alert_functions import get_alert_status
 from dotenv import load_dotenv
 import os
-from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 
 
@@ -21,65 +21,8 @@ token = get_token()
 app = Flask(__name__)
 app.secret_key = os.getenv("app_secret_key")
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///grocery.db"
-db = SQLAlchemy(app)
+db.init_app(app)
 Scss(app)
-
-
-
-class Product(db.Model):
-    id=db.Column(db.Integer, primary_key=True)
-    name=db.Column(db.String(100), nullable=False)
-    prices= db.relationship("Price", backref="product")
-    search_term= db.Column(db.String(100))
-    def __repr__(self) -> str:
-        return f"Product {self.id}: {self.name}"
-
-class Store(db.Model):
-    id=db.Column(db.Integer, primary_key=True)
-    chain=db.Column(db.String(50))
-    locationid=db.Column(db.Integer, nullable=False)
-    city=db.Column(db.String(50), nullable=False)
-    prices = db.relationship("Price", backref="store")
-
-class Price(db.Model):
-    id=db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer,db.ForeignKey("product.id"))
-    store_id=db.Column(db.Integer,db.ForeignKey("store.id"))
-    price=db.Column(db.Float)
-    size=db.Column(db.String(50))
-    u_o_m=db.Column(db.String(50))
-
-class Users(db.Model):
-    id=db.Column(db.Integer, primary_key=True)
-    username=db.Column(db.String(50), unique=True, nullable=False)
-    email=db.Column(db.String(50), unique=True, nullable=False)
-    password_hash=db.Column(db.String(150))
-    admin=db.Column(db.Boolean, default=False)
-
-
-    @property
-    def password(self):
-        raise AttributeError("Passwords are not a readable attribute")
-
-    @password.setter
-    def password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def password_check(self, password):
-        return check_password_hash(self.password_hash, password)
-
-class Alerts(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
-    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
-    target_price = db.Column(db.Integer, nullable=True)
-    active = db.Column(db.Boolean, default=False)
-    product = db.relationship("Product", backref="alerts")
-    store = db.relationship("Store", backref="alerts")
-    email = db.Column(db.String(50), nullable=False)
-    user = db.relationship("Users", backref="alerts")
-
 
 ##admin page, THIS WAS HOME
 @app.route("/admin",methods=["POST","GET"])
@@ -335,11 +278,15 @@ def save_to_db(api_data,search_term):
 
 @app.route("/create-alert", methods=["GET", "POST"])
 def create_alert():
-    if "user_id" not in session:
+    user_id = session.get("user_id")
+    user = db.session.get(Users, user_id)
+
+    if user is None:
+        session.clear()
         flash("Please login to create alerts")
         return redirect("/login")
 
-    user_id = session["user_id"]
+    
     
     if request.method == "POST":
         product_id = request.form["product_id"]
@@ -369,32 +316,6 @@ def alerts():
     username = Users.query.get(user_id)
     user_alerts = Alerts.query.filter_by(user_id=user_id).all()
     return render_template("alerts.html", alerts=user_alerts, username=username)
-
-    
-def get_alert_status():
-    alerts = Alerts.query.filter_by(active=True).all()
-    for alert in alerts:
-        check_alert(alert)
-    
-
-def check_alert(alert):
-    price = Price.query.filter_by(product_id = alert.product_id, store_id = alert.store_id).first()
-    product= alert.product.name
-    current_price = price.price
-    if price is None:
-        return
-    
-    if current_price <= alert.target_price:
-        alert.active = False
-        db.session.commit()
-        alert_message(alert, product, price)
-
-
-def alert_message(alert, product, price):
-        message = f"Price Alert! {product} is on sale for ${price.price}!"
-        print(message)
-        return message
-
 
 ##runner and debugger
 if __name__ == "__main__":

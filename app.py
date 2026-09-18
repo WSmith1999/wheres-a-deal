@@ -4,7 +4,7 @@ from flask_scss import Scss
 from datetime import datetime
 from sqlalchemy import or_
 import requests
-from apipractice import get_token, api_search, location_search, id_specific_search
+from api_functions import get_token, api_search, location_search, id_specific_search
 from models import db, Product, Store, Price, Users, Alerts
 from alert_functions import get_alert_status
 from dotenv import load_dotenv
@@ -23,6 +23,7 @@ app.secret_key = os.getenv("app_secret_key")
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///grocery.db"
 db.init_app(app)
 Scss(app)
+
 
 ##admin page, THIS WAS HOME
 @app.route("/admin",methods=["POST","GET"])
@@ -193,7 +194,8 @@ def select_price():
         "price": price,
         "city": city,
         "size": size,
-        "u_o_m": u_o_m
+        "u_o_m": u_o_m,
+        "kroger_item_id": item_id
     }
 
     searched_price = save_to_db(selected_data, search_term)
@@ -244,7 +246,8 @@ def save_to_db(api_data,search_term):
 
             product = Product(
                 name=api_data["product_name"],
-                search_term = search_term
+                search_term = search_term,
+                kroger_item_id = api_data["kroger_item_id"]
             )
             db.session.add(product)
             db.session.flush()

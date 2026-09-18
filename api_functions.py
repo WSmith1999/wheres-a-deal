@@ -78,7 +78,7 @@ def api_search(token, term, locationid, limit=4):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"failed to fetch bc {e}")
+        print(f"failed to fetch due to {e}")
         return None
     
 def id_specific_search(token, item_id, locationid, limit=1):
@@ -97,7 +97,8 @@ def id_specific_search(token, item_id, locationid, limit=1):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"failed to fetch bc {e}")
+        print(f"failed to fetch due to {e}")
+        print("Kroger response:", response.text)
         return None
 
 if __name__ == "__main__":

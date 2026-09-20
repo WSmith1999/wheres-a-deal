@@ -15,7 +15,6 @@ import secrets
 load_dotenv()
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
-token = get_token()
 
 #app setup
 app = Flask(__name__)
@@ -158,6 +157,7 @@ def home():
         return render_template("index.html", searched_price=searched_price)
     
     zipcode = request.args.get("zipcode")
+    token = get_token()
     api_data = fetch_product(token, search_term, zipcode)
     if not api_data:
         return render_template("index.html", message="enter a valid search term")
@@ -168,6 +168,7 @@ def home():
 ##select product to retrieve price and store to db
 @app.route("/select-product", methods=["GET"])
 def select_price():
+    token = get_token()
     item_id= request.args.get("item_id")
     locationid= request.args.get("locationid")
     chain_name= request.args.get("chain_name")
@@ -310,15 +311,16 @@ def create_alert():
 
 @app.route("/alerts")
 def alerts():
-    if "user_id" not in session:
+    user_id = session.get("user_id")
+    user = db.session.get(Users, user_id)
+   
+    if user is None:
+        session.clear()
+        flash("Please login to create alerts")
         return redirect("/login")
-
-    get_alert_status()
     
-    user_id = session["user_id"]
-    username = Users.query.get(user_id)
     user_alerts = Alerts.query.filter_by(user_id=user_id).all()
-    return render_template("alerts.html", alerts=user_alerts, username=username)
+    return render_template("alerts.html", alerts=user_alerts, username=user)
 
 ##runner and debugger
 if __name__ == "__main__":

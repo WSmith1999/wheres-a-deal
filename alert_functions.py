@@ -6,9 +6,11 @@ def get_alert_status():
     alerts = Alerts.query.filter_by(active=True).all()
     for alert in alerts:
         check_alert(alert)
+    print("got alerts")
     
 
 def check_alert(alert):
+    print("calling kroger")
     token = get_token()
     price_check = id_specific_search(token, alert.product.kroger_item_id, alert.store.locationid)
     print("Kroger item:", alert.product.kroger_item_id)

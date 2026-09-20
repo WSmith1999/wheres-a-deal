@@ -2,3 +2,5 @@
 env/
 __pycache__/
 instance/
+lambda_package/
+lambda_package_zip.zip

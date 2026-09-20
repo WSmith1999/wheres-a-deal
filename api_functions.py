@@ -29,8 +29,7 @@ def get_token():
         print(f"failed to access {e} ")
         return None
 
-token = get_token()
-##print(token)
+
 # get the location id in order to get prices 
 def location_search(token, zipcode, distance=5, limit=1):
     url = f"{base_url}/locations"
@@ -51,15 +50,6 @@ def location_search(token, zipcode, distance=5, limit=1):
     except requests.exceptions.RequestException as e:
         print(f"failed to fetch due to {e}")
         return None
-zipcode = "30680"
-loc_search = location_search(token, zipcode)
-
-location = loc_search["data"][0]
-chain=location["chain"]
-locationid=location["locationId"]
-##print(chain)
-##print(locationid)
-
 
 
 def api_search(token, term, locationid, limit=4):

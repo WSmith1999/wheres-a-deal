@@ -1,20 +1,15 @@
 #Imports
 from flask import Flask , render_template, redirect, request, session, flash
 from flask_scss import Scss
-from datetime import datetime
 from sqlalchemy import or_
-import requests
-from api_functions import get_token, api_search, location_search, id_specific_search
+from api_functions import get_token, api_search, location_search, id_specific_search, promo_or_regular
 from models import db, Product, Store, Price, Users, Alerts
-from alert_functions import get_alert_status
 from dotenv import load_dotenv
 import os
 import secrets
 
 
 load_dotenv()
-client_id = os.getenv("CLIENT_ID")
-client_secret = os.getenv("CLIENT_SECRET")
 
 #app setup
 app = Flask(__name__)
@@ -32,7 +27,8 @@ def admin():
 
     user = db.session.get(Users, session["user_id"])
 
-    if not user.admin:
+    if user is None or not user.admin:
+        session.clear()
         return redirect("/adminlogin")
     
     product = Product.query.all()
@@ -41,6 +37,18 @@ def admin():
     users = Users.query.all()
     alerts = Alerts.query.all()
     return render_template("admin.html", product=product, store=store, price=price, users=users, alerts=alerts)
+
+def admin_user_check():
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return None
+    
+    user = db.session.get(Users, user_id)
+    if user and user.admin:
+        return user
+
+    return None
 
 @app.route("/adminlogin", methods=["POST","GET"])
 def adlogin():
@@ -100,6 +108,9 @@ def register():
 ## delete an item
 @app.route("/delete/<int:id>")
 def delete(id:int):
+    if admin_user_check() is None:
+        return redirect("/adminlogin")
+    
     delete_price = Price.query.get_or_404(id)
     try:
         db.session.delete(delete_price)
@@ -109,7 +120,10 @@ def delete(id:int):
         return f"ERROR {e}"
 
 @app.route("/delete-user/<int:id>")
-def delete_user(id:int):   
+def delete_user(id:int):  
+    if admin_user_check() is None:
+        return redirect("/adminlogin")
+     
     delete_user = Users.query.get_or_404(id)
     try:
         db.session.delete(delete_user)
@@ -119,18 +133,31 @@ def delete_user(id:int):
         return f"ERROR {e}"
 
 @app.route("/delete-alert/<int:id>")
-def delete_alert(id:int):   
-    delete_alert = Alerts.query.get_or_404(id)
+def delete_alert(id:int): 
+    user_id = session.get("user_id")
+    if not user_id:
+        session.clear()
+        return redirect("/login")
+
+    user = db.session.get(Users, user_id)
+    alert = Alerts.query.get_or_404(id)
+    if alert.user_id != user_id and not user.admin:
+        return redirect("/alerts")
+
     try:
-        db.session.delete(delete_alert)
+        db.session.delete(alert)
         db.session.commit()
         return redirect(request.referrer or "/alerts")
     except Exception as e:
+        db.session.rollback()
         return f"ERROR {e}"
 
 ## edit an item , make sure the route matches the route in HTML and the method
 @app.route("/update/<int:id>", methods=["GET", "POST"])
 def update(id:int):
+    if admin_user_check() is None:
+        return redirect("/adminlogin")
+    
     price = Price.query.get_or_404(id)
     if request.method == "POST":
         price.price = request.form["price"]
@@ -145,6 +172,7 @@ def update(id:int):
 ##New home page
 @app.route("/", methods=["GET"])
 def home():
+
     search_term = request.args.get("search")
    
     if not search_term or not search_term.strip():
@@ -165,44 +193,6 @@ def home():
         
     return render_template("index.html", products=api_data, search_term=search_term)
 
-##select product to retrieve price and store to db
-@app.route("/select-product", methods=["GET"])
-def select_price():
-    token = get_token()
-    item_id= request.args.get("item_id")
-    locationid= request.args.get("locationid")
-    chain_name= request.args.get("chain_name")
-    search_term = request.args.get("search_term")
-    city= request.args.get("city")
-    api_data = id_specific_search(token, item_id, locationid)
-    api_product = api_data["data"][0]
-
-
-    product_name = api_product["description"]
-    price = api_product["items"][0]["price"]["regular"]
-    #determine unit of measurment u_o_m
-    size = api_product["items"][0]["size"]
-    sold_by = api_product["items"][0]["soldBy"]
-    if sold_by == "WEIGHT":
-        u_o_m = "Per LB"
-    else:
-        u_o_m = "Per Unit"
-    
-    selected_data = {
-        "locationid": locationid,
-        "chain_name": chain_name,
-        "product_name": product_name,
-        "price": price,
-        "city": city,
-        "size": size,
-        "u_o_m": u_o_m,
-        "kroger_item_id": item_id
-    }
-
-    searched_price = save_to_db(selected_data, search_term)
-    return render_template("index.html", searched_price = searched_price )
-
-## homemade search function
 def search(search_term):
     results = Price.query.join(Product).join(Store).filter(
         or_(
@@ -211,7 +201,6 @@ def search(search_term):
     ).all()
     print(results)
     return results
-    
 
 def fetch_product(token, product, zipcode):
 
@@ -237,6 +226,42 @@ def fetch_product(token, product, zipcode):
         product["city"] = city
     return api_product
 
+##select product to retrieve price and store to db
+@app.route("/select-product", methods=["GET"])
+def select_price():
+    token = get_token()
+    item_id= request.args.get("item_id")
+    locationid= request.args.get("locationid")
+    chain_name= request.args.get("chain_name")
+    search_term = request.args.get("search_term")
+    city= request.args.get("city")
+    api_data = id_specific_search(token, item_id, locationid)
+    api_product = api_data["data"][0]
+
+
+    product_name = api_product["description"]
+    price = promo_or_regular(api_product)
+    #determine unit of measurment u_o_m
+    size = api_product["items"][0]["size"]
+    sold_by = api_product["items"][0]["soldBy"]
+    if sold_by == "WEIGHT":
+        u_o_m = "Per LB"
+    else:
+        u_o_m = "Per Unit"
+    
+    selected_data = {
+        "locationid": locationid,
+        "chain_name": chain_name,
+        "product_name": product_name,
+        "price": price,
+        "city": city,
+        "size": size,
+        "u_o_m": u_o_m,
+        "kroger_item_id": item_id
+    }
+
+    searched_price = save_to_db(selected_data, search_term)
+    return render_template("index.html", searched_price = searched_price )
     
 def save_to_db(api_data,search_term):
         try:

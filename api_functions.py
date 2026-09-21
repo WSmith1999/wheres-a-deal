@@ -1,16 +1,13 @@
 import requests
 import os
 from dotenv import load_dotenv
-import base64
 
 load_dotenv()
-
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
 auth_url = "https://api.kroger.com/v1/connect/oauth2/token"
 base_url = "https://api.kroger.com/v1"
-credentials = f"{client_id}:{client_secret}"
 def get_token():
     payload = {
         "grant_type": "client_credentials",
@@ -48,7 +45,7 @@ def location_search(token, zipcode, distance=5, limit=1):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"failed to fetch due to {e}")
+        print(f"Failed to fetch due to {e}")
         return None
 
 
@@ -68,7 +65,7 @@ def api_search(token, term, locationid, limit=4):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"failed to fetch due to {e}")
+        print(f"Failed to fetch due to {e}")
         return None
     
 def id_specific_search(token, item_id, locationid, limit=1):
@@ -87,15 +84,20 @@ def id_specific_search(token, item_id, locationid, limit=1):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"failed to fetch due to {e}")
+        print(f"Failed to fetch due to {e}")
         print("Kroger response:", response.text)
         return None
 
-if __name__ == "__main__":
-    search = api_search(token, "private selection sugar free syrup")
-    for product in search["data"]:
-        print(product["brand"])
-        print(product["description"])
-        print(product["productId"])
-        print(product["items"][0]["price"]["regular"])
+def promo_or_regular(api_product):
+    price_data = api_product["items"][0]["price"]
+    regular = price_data["regular"]
+    promo = price_data.get("promo")
+
+    if not promo:
+        return regular
+
+    if promo > 0 and promo < regular:
+        return promo
+
+    return regular
 

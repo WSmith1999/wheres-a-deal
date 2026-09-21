@@ -337,6 +337,10 @@ def create_alert():
 @app.route("/alerts")
 def alerts():
     user_id = session.get("user_id")
+    if user_id is None:
+        flash("Please login to create alerts")
+        return redirect("/login")
+    
     user = db.session.get(Users, user_id)
    
     if user is None:

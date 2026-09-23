@@ -3,20 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{url_for("static", filename="styles.css") }}">
-    {%block head%}{%endblock%}
-    <title>Document</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='styles.css') }}">
+
+    {% block head %}
+    {% endblock %}
 </head>
+
 <body>
-     <div class="logout-button">
-     <a href="/logout">Logout</a>
-     </div>
-     {% with messages = get_flashed_messages() %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-     {% endwith %}
-    {%block body%}
-    {%endblock%}
+
+    <nav class="navbar">
+        <a class="navbar-brand" href="/">Where's A Deal?</a>
+
+        <div class="navbar-links">
+            <a href="/alerts">Alerts</a>
+            <a href="/adminlogin">Admin</a>
+            <a href="/login">Login</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for message in messages %}
+                        <p class="flash-message">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block body %}
+        {% endblock %}
+
+    </main>
+
 </body>
 </html>

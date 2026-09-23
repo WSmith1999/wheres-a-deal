@@ -1,143 +1,183 @@
+$green: #3f6f5a;
+$light-green: #e8f0ec;
+$background: #f7f7f5;
 
-$primary_color: #719f91;
-$bg_color: wheat;
-$text: #222;
-
-header{
-    text-align: center;
-    padding: 30px;
-    
-
-    title{
-       color: $primary_color;
-    }
-    
+* {
+    box-sizing: border-box;
 }
-form{
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: $background;
+    color: #222;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+
+.navbar {
+    background: $green;
+    color: white;
+    padding: 18px 40px;
+
     display: flex;
-    justify-content: center;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+}
 
-    input{
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 15px;
+.navbar-brand {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 20px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+}
+
+.hero {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.hero h1 {
+    font-size: 36px;
+    margin-bottom: 5px;
+}
+
+.hero p {
+    color: #666;
+    margin-top: 0;
+}
+
+button,
+input[type="submit"],
+.btn {
+    background: $green;
+    color: white;
+
+    border: none;
+    border-radius: 6px;
+
+    padding: 10px 16px;
+    cursor: pointer;
+}
+
+input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.login {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 30px;
+
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.login h1 {
+    text-align: center;
+}
+
+.login form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login button {
+    width: 100%;
+}
+.card {
+    background: white;
+    padding: 20px;
+    margin: 20px 0;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th,
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+
+.flash-message {
+    background: $light-green;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        gap: 10px;
     }
 
-    #btn_add{
-        background: $primary_color;
-        color: $text;
-        cursor: pointer;
-        border: none;
-        padding: 8px;
-        &:hover{
-            transform: scale(1.05);
-        }
-
-
+    .navbar-links {
+        flex-wrap: wrap;
     }
 }
 
-.nav-buttons {
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin: 25px 0;
+    justify-content: center;
+}
+
+.search-form input[type="text"] {
+    width: 200px;
+}
+
+.search-form input[type="submit"] {
+    width: auto;
+}
+
+.search-message {
     text-align: center;
+}
+
+details {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    padding: 15px;
     margin: 20px 0;
 }
-.nav-buttons a{
-    display: inline-block;
-    margin: 0 5px;
 
-}
-
-.logout-button{
-    margin: 0 5px;
-    text-align: right;
-}
-
-body{
-    font-family:Georgia, 'Times New Roman', Times, serif;
-    margin: 15px;
-    padding: 5px;
-    background-color: $bg_color;
-    h1{
-        color: $text;
-        text-align: center;
-    }
-    h4{
-        color: $text;
-        text-align: center;
-    }
-    p{
-        color: $text;
-        text-align: center;
-    }
-    a{
-        display: inline-block;
-        background-color: $primary_color;
-        color: $text;
-        padding: 8px 12px;
-        border-radius: 8px;
-        text-decoration: none;
-        text-align: center;
-        width: fit-content;
-        margin: 0 auto;
-
-        &:hover{
-            transform: scale(1.05);
-        }
-
-    }
-    button{
-          background: $primary_color;
-        color: $text;
-        cursor: pointer;
-        border: none;
-        padding: 8px;
-    }
-}
-
-.content{
-    max-width: 1100px;
-    margin: 50px auto;
-    padding: 20px;
-    background-color: floralwhite;
-    border-radius: 10px;
-    box-shadow: 0 0 10px black;
-    text-align: center;
-    
-    details{
-        background-color: whitesmoke;
-        max-width: 800px;
-        margin: 15px auto;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        overflow: hidden;
-    }
-
-    summary {
-        padding: 15px 20px;
-        background: $primary_color;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 18px;
-    }
-
-    summary:hover {
-        transform: scale(1.01);
-    }
-    
-}
-
-summary{
-    padding: 3px 5px;
-    background: $primary_color;
-    color: $text;
-    cursor: pointer;
+summary {
     font-size: 18px;
-    border-radius: 10px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-    display: inline-block;
+    font-weight: bold;
+    cursor: pointer;
 }
 
-summary:hover {
-    transform: scale(1.02);
+details table {
+    margin-top: 15px;
 }

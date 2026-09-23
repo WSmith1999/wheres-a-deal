@@ -1,127 +1,168 @@
-header {
-  text-align: center;
-  padding: 30px;
-}
-header title {
-  color: #719f91;
-}
-
-form {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-form input {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 15px;
-}
-form #btn_add {
-  background: #719f91;
-  color: #222;
-  cursor: pointer;
-  border: none;
-  padding: 8px;
-}
-form #btn_add:hover {
-  transform: scale(1.05);
-}
-
-.nav-buttons {
-  text-align: center;
-  margin: 20px 0;
-}
-
-.nav-buttons a {
-  display: inline-block;
-  margin: 0 5px;
-}
-
-.logout-button {
-  margin: 0 5px;
-  text-align: right;
+* {
+  box-sizing: border-box;
 }
 
 body {
-  font-family: Georgia, "Times New Roman", Times, serif;
-  margin: 15px;
-  padding: 5px;
-  background-color: wheat;
-}
-body h1 {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f7f7f5;
   color: #222;
-  text-align: center;
-}
-body h4 {
-  color: #222;
-  text-align: center;
-}
-body p {
-  color: #222;
-  text-align: center;
-}
-body a {
-  display: inline-block;
-  background-color: #719f91;
-  color: #222;
-  padding: 8px 12px;
-  border-radius: 8px;
-  text-decoration: none;
-  text-align: center;
-  width: -moz-fit-content;
-  width: fit-content;
-  margin: 0 auto;
-}
-body a:hover {
-  transform: scale(1.05);
-}
-body button {
-  background: #719f91;
-  color: #222;
-  cursor: pointer;
-  border: none;
-  padding: 8px;
 }
 
-.content {
-  max-width: 1100px;
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+.navbar {
+  background: #3f6f5a;
+  color: white;
+  padding: 18px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-brand {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 20px;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.hero h1 {
+  font-size: 36px;
+  margin-bottom: 5px;
+}
+
+.hero p {
+  color: #666;
+  margin-top: 0;
+}
+
+button,
+input[type=submit],
+.btn {
+  background: #3f6f5a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.login {
+  max-width: 400px;
   margin: 50px auto;
-  padding: 20px;
-  background-color: floralwhite;
-  border-radius: 10px;
-  box-shadow: 0 0 10px black;
+  padding: 30px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.login h1 {
   text-align: center;
 }
-.content details {
-  background-color: whitesmoke;
-  max-width: 800px;
-  margin: 15px auto;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
+
+.login form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
-.content summary {
-  padding: 15px 20px;
-  background: #719f91;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
+
+.login button {
+  width: 100%;
 }
-.content summary:hover {
-  transform: scale(1.01);
+
+.card {
+  background: white;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.flash-message {
+  background: #e8f0ec;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .navbar-links {
+    flex-wrap: wrap;
+  }
+}
+.search-form {
+  display: flex;
+  gap: 10px;
+  margin: 25px 0;
+  justify-content: center;
+}
+
+.search-form input[type=text] {
+  width: 200px;
+}
+
+.search-form input[type=submit] {
+  width: auto;
+}
+
+.search-message {
+  text-align: center;
+}
+
+details {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
 }
 
 summary {
-  padding: 3px 5px;
-  background: #719f91;
-  color: #222;
-  cursor: pointer;
   font-size: 18px;
-  border-radius: 10px;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
-  display: inline-block;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-summary:hover {
-  transform: scale(1.02);
+details table {
+  margin-top: 15px;
 }/*# sourceMappingURL=styles.css.map */

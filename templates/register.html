@@ -6,10 +6,10 @@
 
 {% block body %}
 <div class="login">
-    <h1>Registration Page</h1>
+    <h1>Create Account</h1>
     <p>{{message}}</p>
     <div class="nav-buttons" >
-        <a href="/login">Login</a>
+        <p>Already have an account? <a href="/login">Login</a> </p>
     </div>
     <form action="/register" method="POST">
         <input type="text" name="username" placeholder="Think of a username" id="username"> 

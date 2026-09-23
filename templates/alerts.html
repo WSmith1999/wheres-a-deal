@@ -5,15 +5,22 @@
 {% endblock %}
 
 {% block body %}
-<h1> View and delete your active alerts</h1>
-<h4> Welcome back {{username.username}}</h4>
-<div class="nav-buttons" >
-    <a href="/">Home</a>
-</div>
+<h1> Your active price alerts</h1>
+<h4> Welcome back, {{username.username}}</h4>
+
 {% if alerts | length < 1 %}
     <p> You have no active alerts </p>
 
 {% else %}
+    <table>
+        <tr>
+            <th>Product</th>
+            <th>Store</th>
+            <th>Target Price</th>
+            <th>Email</th>
+            <th>Action</th>
+        </tr>
+
     {% for alert in alerts %}
         <tr>
             <td>{{alert.product.name}}</td>
@@ -25,6 +32,7 @@
             </td>
         </tr>
     {% endfor %}
+    </table>
 {% endif %}
 
 {% endblock %}

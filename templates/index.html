@@ -5,45 +5,47 @@
 {% endblock  %}
 
 {% block body  %}
-     <h1> Where's A Deal?</h1>
-     <h4>Will you find a good deal?</h4>
-     <div class="nav-buttons">
-     <a href= "/adminlogin">Admin Page</a>
-     <a href= "/login">Login</a>
-     <a href= "/alerts">Alerts</a>
+     <div class="hero">
+      <h1> Find the best grocery prices!</h1>
+      <h4>Search local Kroger products and create alerts to know when its a deal</h4>
      </div>
-     <p>{{message}}<p>
+     
+     <p class="search-message">{{message}}<p>
 
 
-     <form action="/" method="GET">
-        <input type="text" name="search" value="search item" id="search"/>
-        <input type="text" name="zipcode" value="zipcode" id="zipcode"/>
+     <form action="/" method="GET" class ="search-form">
+        <input type="text" name="search" placeholder="search item" id="search"/>
+        <input type="text" name="zipcode" placeholder="zipcode" id="zipcode"/>
         <input type="submit" value="search" id="btn_add"/>
      </form>
      {% if products %}
+      <h2>Select A Product </h2>
       {% for product in products%}
-         <form action="/select-product" method="GET">
-            <p>{{product["description"]}}
-            <input type="hidden" name="locationid" value="{{product["locationId"]}}">
-            <input type="hidden" name="chain_name" value="{{product["chain_name"]}}">
-            <input type="hidden" name="city" value="{{product["city"]}}">
-            <input type="hidden" name="search_term" value="{{search_term}}">
-            <button type="submit" name="item_id" value="{{product["productId"]}}">
-               Select
-            </button>
-         </form>
+         <div class="card">
+            <form action="/select-product" method="GET">
+               <h3>{{product["description"]}}</h3>
+               <input type="hidden" name="locationid" value="{{product["locationId"]}}">
+               <input type="hidden" name="chain_name" value="{{product["chain_name"]}}">
+               <input type="hidden" name="city" value="{{product["city"]}}">
+               <input type="hidden" name="search_term" value="{{search_term}}">
+               <button type="submit" name="item_id" value="{{product["productId"]}}">
+                  Select
+               </button>
+            </form>
+         </div>
       {% endfor %}
      {% endif %}
    
      {% if searched_price%}
       {% for price in searched_price %}
-      <tr>
-         <td>{{price.product.name}}</td>
-         <td>{{price.size}}</td>
-         <td>${{"%.2f"|format(price.price)}}</td>
-         <td>{{price.u_o_m}}</td>
-         <td>{{price.store.chain}}</td>
-         <td>{{price.store.city}}</td>
+      <div class="card">
+         <h3>{{ price.product.name }}</h3>
+
+            <p>Size: {{ price.size }}</p>
+            <p>Price: ${{ "%.2f"|format(price.price) }}</p>
+            <p>{{ price.u_o_m }}</p>
+            <p>Store: {{ price.store.chain }}</p>
+            <p>City: {{ price.store.city }}</p>
          <details>
             <summary>Create Price Alert</summary>
             <td>
@@ -57,7 +59,7 @@
                </form>
             </td>
          </details>
-      </tr>
+      </div>
       {% endfor %}
      {% endif %}
 {% endblock  %}

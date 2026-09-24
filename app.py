@@ -14,7 +14,7 @@ load_dotenv()
 #app setup
 app = Flask(__name__)
 app.secret_key = os.getenv("app_secret_key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///grocery.db"
 db.init_app(app)
 Scss(app)
 
@@ -179,10 +179,6 @@ def home():
        return render_template("index.html", message="Please enter a search term")
 
     search_term = search_term.lower().strip()
-    searched_price = search(search_term)
-
-    if searched_price:
-        return render_template("index.html", searched_price=searched_price)
     
     zipcode = request.args.get("zipcode")
     token = get_token()
@@ -193,14 +189,6 @@ def home():
         
     return render_template("index.html", products=api_data, search_term=search_term)
 
-def search(search_term):
-    results = Price.query.join(Product).join(Store).filter(
-        or_(
-            Product.search_term == search_term
-        )
-    ).all()
-    print(results)
-    return results
 
 def fetch_product(token, product, zipcode):
 
@@ -241,7 +229,7 @@ def select_price():
 
     product_name = api_product["description"]
     price = promo_or_regular(api_product)
-    #determine unit of measurment u_o_m
+    
     size = api_product["items"][0]["size"]
     sold_by = api_product["items"][0]["soldBy"]
     if sold_by == "WEIGHT":
@@ -265,7 +253,7 @@ def select_price():
     
 def save_to_db(api_data,search_term):
         try:
-            product = Product.query.filter_by(search_term=search_term).first()
+            product = Product.query.filter_by(kroger_item_id=api_data["kroger_item_id"]).first()
             
             if product:
                 return Price.query.filter_by(product_id=product.id).all()

@@ -14,7 +14,7 @@ load_dotenv()
 #app setup
 app = Flask(__name__)
 app.secret_key = os.getenv("app_secret_key")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///grocery.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 db.init_app(app)
 Scss(app)
 

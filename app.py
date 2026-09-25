@@ -11,7 +11,7 @@ import secrets
 
 load_dotenv()
 
-#app setup
+
 app = Flask(__name__)
 app.secret_key = os.getenv("app_secret_key")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///test.db")
@@ -19,7 +19,6 @@ db.init_app(app)
 Scss(app)
 
 
-##admin page, THIS WAS HOME
 @app.route("/admin",methods=["POST","GET"])
 def admin():
     if "user_id" not in session:
@@ -105,7 +104,7 @@ def register():
         return render_template("index.html", message = "Account created")
      return render_template("register.html")
 
-## delete an item
+
 @app.route("/delete/<int:id>")
 def delete(id:int):
     if admin_user_check() is None:
@@ -152,7 +151,7 @@ def delete_alert(id:int):
         db.session.rollback()
         return f"ERROR {e}"
 
-## edit an item , make sure the route matches the route in HTML and the method
+
 @app.route("/update/<int:id>", methods=["GET", "POST"])
 def update(id:int):
     if admin_user_check() is None:
@@ -169,7 +168,7 @@ def update(id:int):
     else:
         return render_template("edit.html", price=price)
     
-##New home page
+
 @app.route("/", methods=["GET"])
 def home():
 
@@ -193,7 +192,6 @@ def home():
 def fetch_product(token, product, zipcode):
 
     loc_search = location_search(token, zipcode)
-    ##if an invalid search occurs data will return empty
     if not loc_search or not loc_search["data"]:
         return None
     location = loc_search["data"][0]
@@ -203,7 +201,7 @@ def fetch_product(token, product, zipcode):
     city = location["address"]["city"]
 
     api_results = api_search(token,product,locationid)
-    ##if an invalid search occurs data will return empty
+   
     if not api_results["data"]:
         return None
     api_product = api_results["data"][:4]
@@ -214,7 +212,7 @@ def fetch_product(token, product, zipcode):
         product["city"] = city
     return api_product
 
-##select product to retrieve price and store to db
+
 @app.route("/select-product", methods=["GET"])
 def select_price():
     token = get_token()
@@ -339,11 +337,10 @@ def alerts():
     user_alerts = Alerts.query.filter_by(user_id=user_id).all()
     return render_template("alerts.html", alerts=user_alerts, username=user)
 
-##runner and debugger
+
 if __name__ == "__main__":
-    #use this to create database
     with app.app_context():
         db.create_all()
-    ## use host = 0.0.0.0 and 5000 to allow any ip to access with ec2
+    
     app.run(host="0.0.0.0", port=5000, debug=True)
 

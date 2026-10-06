@@ -1,11 +1,22 @@
 import requests
 import os
 from dotenv import load_dotenv
+from database_config import get_secret
 
 load_dotenv()
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
+
+kroger_secret_arn = os.getenv("KROGER_SECRET_ARN")
+if kroger_secret_arn:
+    kroger_secret = get_secret(kroger_secret_arn)
+    CLIENT_ID = kroger_secret["CLIENT_ID"]
+    CLIENT_SECRET = kroger_secret["CLIENT_SECRET"]
+else:
+    CLIENT_ID = os.getenv("CLIENT_ID")
+    CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+
 auth_url = "https://api.kroger.com/v1/connect/oauth2/token"
 base_url = "https://api.kroger.com/v1"
 def get_token():

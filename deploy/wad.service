@@ -1,0 +1,13 @@
+[Unit]
+Description=Where's A Deal Gunicorn Service
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/wheres-a-deal
+EnvironmentFile=/home/ec2-user/wheres-a-deal/.env
+ExecStart=/home/ec2-user/wheres-a-deal/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

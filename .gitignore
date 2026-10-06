@@ -4,3 +4,9 @@ __pycache__/
 instance/
 lambda_package/
 lambda_package_zip.zip
+terraform.tfvars
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+wad.plan

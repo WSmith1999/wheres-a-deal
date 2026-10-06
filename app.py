@@ -7,6 +7,7 @@ from models import db, Product, Store, Price, Users, Alerts
 from dotenv import load_dotenv
 import os
 import secrets
+from database_config import get_db_url
 
 
 load_dotenv()
@@ -14,7 +15,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("app_secret_key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///test.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = get_db_url()
 db.init_app(app)
 Scss(app)
 

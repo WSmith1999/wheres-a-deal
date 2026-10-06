@@ -126,6 +126,25 @@ resource "aws_iam_role_policy" "ec2_secrets" {
   })
 }
 
+resource "aws_iam_role_policy" "ec2_kroger_secret" {
+  name = "wad-ec2-kroger-secret"
+  role = aws_iam_role.ec2_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.kroger.arn
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "wad-ec2-profile"
   role = aws_iam_role.ec2_role.name

@@ -5,9 +5,6 @@ from database_config import get_secret
 
 load_dotenv()
 
-client_id = os.getenv("CLIENT_ID")
-client_secret = os.getenv("CLIENT_SECRET")
-
 kroger_secret_arn = os.getenv("KROGER_SECRET_ARN")
 if kroger_secret_arn:
     kroger_secret = get_secret(kroger_secret_arn)
@@ -28,7 +25,7 @@ def get_token():
         response = requests.post(
             auth_url,
             data = payload,
-            auth=(client_id, client_secret),
+            auth=(CLIENT_ID, CLIENT_SECRET),
             headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
         response.raise_for_status()

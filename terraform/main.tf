@@ -67,6 +67,7 @@ module "db" {
   subnet_ids             = module.vpc.private_subnets
 
   deletion_protection = false
+  skip_final_snapshot = true
 
   tags = {
     Terraform   = "true"

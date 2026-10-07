@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Deploy to EC2
         run: |
-          mkrdir -p ~/.ssh
+          mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/wad-key
           chmod 600 ~/.ssh/wad-key
 

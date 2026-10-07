@@ -23,3 +23,21 @@ jobs:
 
     - name: Test flask
       run: pytest
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to EC2
+        run: |
+          mkrdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/wad-key
+          chmod 600 ~/.ssh/wad-key
+
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/wad-key ec2-user@${{ secrets.EC2_HOST }} "
+            cd /home/ec2-user/wheres-a-deal &&
+            git pull origin main &&
+            venv/bin/pip install -r requirements.txt &&
+            sudo systemctl restart wad
+          "

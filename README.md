@@ -159,9 +159,9 @@ SQLAlchemy models cover `Users`, `Product`, `Store`, `Price`, and `Alerts`. The 
    app_secret_key=replace_with_a_long_random_secret
    ```
 
-   With no `DB_SECRET_ARN`, `database_config.py` uses the local SQLite fallback (`sqlite:///test.db`). Never commit `.env` or credential files.
+   With no `DB_SECRET_ARN`, `database_config.py` uses the local SQLite fallback (`sqlite:///test.db`).
 
-4. Initialize the local database (if it does not already exist):
+4. Initialize the local database :
 
    ```bash
    python -c "from app import app; from models import db; app.app_context().push(); db.create_all()"

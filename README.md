@@ -1,245 +1,194 @@
 # Where's A Deal
 
-Where's A Deal is a grocery price tracking and alert notification app built with Python, Flask, PostgreSQL, and AWS.
+**A Python/Flask grocery price tracker with AWS infrastructure, scheduled price alerts, and automated CI/CD deployment.**
 
-Users have the ability to search for products at their local Kroger-owned store, select which product to retrieve its price, and create an alert to notify them when it has reached their target price. The app stores the tracked products and alerts in PostgreSQL, while a scheduled AWS Lambda function routinely checks the Kroger API for updated prices and promos. When a specified product reaches its target price, an email will be sent using Amazon SNS.
+Where's A Deal lets users search Kroger products by keyword and ZIP code, retrieve store-specific prices, and set target-price alerts. I built this project to gain hands-on experience developing and deploying a full-stack Python application while connecting multiple AWS services in a real setting.
 
-I built this project to gain hands-on experience developing and deploying a full-stack Python application while connecting multiple AWS services in a real setting.
+**Project focus:** Python · Flask · PostgreSQL · AWS · Terraform · GitHub Actions · Linux
 
 ## Features
 
-- Search for grocery products using a keyword and ZIP code using the Kroger API
-- Select and track specific Kroger products
-- Store products, stores, prices, users, and alerts in PostgreSQL
-- Register users and log in using hashed passwords
-- Create and delete price alerts
-- Admin dashboard for managing application data
-- Handle regular and promotional Kroger pricing
-- Automatically check tracked prices with AWS Lambda
-- Schedule routine price checks with Amazon EventBridge
-- Send price alert emails through Amazon SNS
-- Deploy a Flask application on Amazon EC2 using Gunicorn
+- Search Kroger products by keyword and ZIP code, then select a specific item and store.
+- Retrieve regular and promotional prices using the Kroger API.
+- Register and sign in; manage saved target-price alerts.
+- Use an administrator interface for managing application data.
+- Persist users, products, stores, prices, and alerts with SQLAlchemy and PostgreSQL on Amazon RDS.
+- Run scheduled price checks using EventBridge and AWS Lambda.
+- Publish matching price alerts to an Amazon SNS email subscription.
+
+> **Notification limitation:** The current SNS implementation sends to a confirmed topic subscription; it does not independently send an email to each user's address. Per-user delivery using Amazon SES is a future improvement.
 
 ## Architecture
 
-The application combines a Flask web application with scheduled serverless processing.
+```mermaid
+flowchart TB
+    User[User / Browser] -->|HTTP| Nginx
+    subgraph AWS[AWS VPC]
+      subgraph Public[Public subnet]
+        Nginx[Nginx on EC2] --> Gunicorn[Gunicorn + systemd]
+        Gunicorn --> Flask[Flask application]
+        NAT[NAT Gateway]
+      end
+      subgraph Private[Private subnets]
+        RDS[(Amazon RDS PostgreSQL)]
+        Lambda[AWS Lambda price checker]
+      end
+      Flask --> RDS
+      Lambda --> RDS
+      Lambda -->|Outbound via NAT| NAT
+    end
+    Flask -->|Product / store lookup| Kroger[Kroger API]
+    NAT -->|HTTPS| Kroger
+    Scheduler[EventBridge Scheduler] -->|Scheduled invocation| Lambda
+    Lambda -->|Matching alert| SNS[Amazon SNS topic]
+    SNS --> Email[Confirmed email subscriber]
+    Secrets[AWS Secrets Manager] -.->|Credentials via IAM roles| Flask
+    Secrets -.->|Credentials via IAM roles| Lambda
+```
 
-![Architecture Diagram](docs/architecture.png)
+**Web request:** Browser → Nginx → Gunicorn → Flask → Kroger API / RDS. Nginx acts as the reverse proxy; systemd keeps Gunicorn running.
 
-## Application Flow
+**Automated alert:** EventBridge → Lambda → RDS + Kroger API → SNS → email when a tracked price meets its target. Lambda runs in private subnets and uses a NAT Gateway for outbound API access.
 
-1. The user searches for a product and enters a ZIP code.
-2. The Flask application requests matching products and nearby store information from the Kroger API.
-3. The user selects a specific product and can create a target price alert.
-4. Product, store, price, user, and alert information is stored in PostgreSQL on Amazon RDS.
-5. Amazon EventBridge invokes the price-checking Lambda function on a schedule.
-6. Lambda retrieves active alerts from RDS and checks the Kroger API for the latest product price.
-7. The latest price is stored and compared with the user's target price.
-8. If the target price is reached, Amazon SNS publishes an email notification.
+### Continuous integration and deployment
 
-## Tech Stack
+```mermaid
+flowchart LR
+    Push[Push to main] --> Runner[GitHub Actions runner]
+    Runner --> Test[Install Python 3.11 and dependencies]
+    Test --> Pytest[Run pytest]
+    Pytest -->|Pass| Deploy[Deploy job via SSH]
+    Pytest -->|Fail| Stop[Stop deployment]
+    Deploy --> Pull[EC2: git pull + pip install]
+    Pull --> Restart[Restart wad.service]
+    Restart --> App[Updated Flask app]
+```
 
-### Application
+The `.github/workflows/deploy.yml` workflow runs on pushes to `main`. Its `deploy` job depends on the `test` job, so deployment only proceeds after the automated test succeeds. GitHub Actions authenticates to EC2 with an SSH private key stored in repository Actions Secrets, then updates the checkout, installs requirements into the existing virtual environment, and restarts the systemd service.
 
-- Python
-- Flask
-- SQLAlchemy
-- Jinja2
-- HTML
-- SCSS / CSS
-- Gunicorn
+**Verified:** The pytest smoke test passed locally and in GitHub Actions, and the GitHub Actions deployment job completed successfully against a running EC2 instance. The current test checks the Flask homepage; it is not comprehensive test coverage.
 
-### Database
+## Technology stack
 
-- PostgreSQL / Amazon RDS
-- SQLite for local development
+| Area | Technologies |
+| --- | --- |
+| Application | Python 3.11, Flask, Jinja2, HTML, SCSS/CSS |
+| Data | SQLAlchemy, PostgreSQL (Amazon RDS), SQLite for local development |
+| Cloud | EC2, RDS, Lambda, EventBridge, SNS, VPC, NAT Gateway, IAM, Secrets Manager |
+| Infrastructure as code | Terraform, community AWS modules |
+| Web serving | Amazon Linux 2023, Nginx, Gunicorn, systemd |
+| CI/CD and testing | GitHub Actions, pytest, Git, SSH, GitHub Actions Secrets |
+| External API | Kroger API |
 
-### AWS
+## AWS infrastructure and Terraform
 
-- Amazon EC2
-- Amazon RDS
-- AWS Lambda
-- Amazon EventBridge
-- Amazon SNS
-- Amazon VPC
-- NAT Gateway
+Terraform provisions the AWS resources used by the application, including public/private VPC subnets, security groups, an EC2 web server, private RDS PostgreSQL, a VPC-connected Lambda function, a NAT Gateway, IAM roles, Secrets Manager integration, an SNS topic, and an EventBridge schedule.
 
-### APIs and Tools
+- **Network separation:** EC2 serves web traffic from a public subnet; RDS and Lambda run in private subnets. Security groups restrict access to PostgreSQL.
+- **IAM and secrets:** EC2 and Lambda use IAM roles to retrieve authorized secrets rather than embedding database passwords or Kroger API credentials in source code.
+- **Reproducibility:** Terraform was used to rebuild the AWS environment for deployment testing and then destroy it to avoid ongoing charges.
 
-- Kroger API
-- Git
-- GitHub
-
-## Screenshots
-
-### Product Search
-
-![Product Search](docs/homepage.png)
-
-### Product Results
-
-![Product Results](docs/search-results.png)
-
-### Price Alert
-
-![Price Alert](docs/create-alert.png)
-
-### Alert Dashboard
-
-![Alert Dashboard](docs/alerts.png)
-
-## AWS Infrastructure
-
-The Flask application was deployed to an Amazon Linux EC2 instance and served using Gunicorn. Application data was stored on SQLite during local development and later moved to PostgreSQL hosted on Amazon RDS.
-
-The scheduled price-checking process runs separately from the Flask web server. Amazon EventBridge invokes AWS Lambda, which connects to RDS to retrieve active alerts and then requests current pricing from the Kroger API.
-
-Because Lambda was deployed in private VPC subnets, a NAT Gateway was configured to provide outbound internet access to the Kroger API while keeping the Lambda function private.
-
-When an alert reaches its target price, Lambda publishes a notification through Amazon SNS.
-
-### VPC Resource Map
-
-![VPC Resource Map](docs/vpc-resource-map.png)
+Terraform provisions infrastructure, but the current setup still requires **one-time server bootstrapping** (installing Python, preparing the virtual environment, setting environment variables, and installing the systemd/Nginx configuration). CI/CD then updates application code on that prepared server.
 
 ## Database
 
-SQLAlchemy is used as the ORM for both local SQLite development and the production PostgreSQL database.
+SQLAlchemy models cover `Users`, `Product`, `Store`, `Price`, and `Alerts`. The app uses SQLite for local development and PostgreSQL on Amazon RDS in AWS. The product-tracking workflow uses Kroger product identifiers to distinguish specific products rather than relying solely on generic search terms.
 
-The application contains models for:
+## Screenshots
 
-- `Users` - user accounts and authentication
-- `Product` - tracked Kroger products and their Kroger product IDs
-- `Store` - Kroger store locations
-- `Price` - product pricing and unit information
-- `Alerts` - users' target price alerts
+### Product search
+![Product search](docs/homepage.png)
 
-Kroger product IDs are used to uniquely identify products instead of relying on generic search terms. For example, multiple products returned from a search for `chicken` can be stored and tracked independently.
+### Product results
+![Product results](docs/search-results.png)
 
-## Security
+### Create price alert
+![Create price alert](docs/create-alert.png)
 
-- User passwords are hashed rather than stored as plaintext
-- Application credentials and API secrets are stored in environment variables
-- Database credentials are not stored in the source code
-- User alert deletion is restricted to the alert owner or an administrator
-- Administrative functionality requires an authenticated administrator account
+### Alert dashboard
+![Alert dashboard](docs/alerts.png)
 
-## Challenges Faced and What I Learned
+### AWS network reference
+![VPC resource map](docs/vpc-resource-map.png)
 
-One of the biggest challenges of this project was moving beyond a locally running Flask application and designing the infrastructure required to run different parts of the application in AWS.
 
-Some of the major things I worked through included:
+### GitHub Actions CI/CD
+![Successful test and deploy jobs](docs/actions.png)
 
-- Moving from SQLite to PostgreSQL on Amazon RDS
-- Deploying Flask to Amazon Linux on EC2
-- Running Flask behind Gunicorn
-- Configuring security groups and VPC networking
-- Giving a private Lambda function outbound API access through a NAT Gateway
-- Packaging Python dependencies for Lambda
-- Connecting Lambda to PostgreSQL
-- Scheduling automated price checks with EventBridge
-- Publishing notifications with SNS
-- Handling Kroger promotional versus regular pricing
-- Refactoring product tracking to use Kroger product IDs instead of search terms
 
-## Current Limitations
+## Security and operational notes
 
-Email alerts currently use an Amazon SNS topic with a confirmed email subscription. This demonstrates the complete automated notification pipeline, but notifications are not currently routed independently to each user's email address.
+- User passwords are hashed; administrator functionality requires authentication.
+- AWS service access is managed with IAM roles and scoped security groups.
+- AWS database and Kroger API secrets are retrieved from Secrets Manager.
+- The GitHub Actions SSH private key is stored in Actions Secrets, not committed to the repository.
+- The initial SSH deployment workflow uses `StrictHostKeyChecking=no` for convenience; pinning the server's verified host key is a future security improvement.
+- The web deployment was tested with HTTP/Nginx. HTTPS and a custom domain are not yet implemented.
+- The AWS resources are not intended to remain continuously online; the environment was destroyed after testing to control costs.
 
-A future version could use Amazon SES to send notifications directly to the email associated with each alert.
+## Challenges and lessons learned
 
-## Future Improvements
+- Migrated from a local SQLite-backed Flask application to PostgreSQL on Amazon RDS.
+- Configured public/private networking, security groups, IAM roles, and NAT access for a private Lambda function.
+- Packaged Lambda dependencies and debugged credential loading for the Kroger API.
+- Built and tested the scheduled Lambda → RDS/Kroger → SNS notification flow.
+- Configured Gunicorn under systemd, including troubleshooting a missing Gunicorn executable (`203/EXEC`).
+- Implemented a GitHub Actions workflow with a test-before-deploy dependency and debugged SSH key formatting/authentication during the first CD runs.
 
-- Use Amazon SES for per-user email notifications
-- Recreate the AWS infrastructure using Terraform
-- Containerize the application with Docker
-- Add Nginx and HTTPS in front of Gunicorn
-- Add automated testing
-- Add CI/CD deployment
-- Track historical prices and display price charts
-- Support additional grocery retailers
-- Add database migrations with Flask-Migrate/Alembic
+## Running locally
 
-## Running Locally
+1. Clone the repository and create a virtual environment:
 
-### 1. Clone the Repository
+   ```bash
+   git clone https://github.com/WSmith1999/wheres-a-deal.git
+   cd wheres-a-deal
+   python -m venv venv
+   ```
 
-```bash
-git clone https://github.com/WSmith1999/wheres-a-deal.git
-cd wheres-a-deal
-```
+2. Activate the environment (Windows PowerShell: `./venv/Scripts/Activate.ps1`; Linux/macOS: `source venv/bin/activate`) and install dependencies:
 
-### 2. Create a Virtual Environment
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```bash
-python -m venv venv
-```
+3. Create a `.env` file in the project root with local development settings:
 
-Activate the virtual environment.
+   ```dotenv
+   CLIENT_ID=your_kroger_client_id
+   CLIENT_SECRET=your_kroger_client_secret
+   app_secret_key=replace_with_a_long_random_secret
+   ```
 
-Windows:
+   With no `DB_SECRET_ARN`, `database_config.py` uses the local SQLite fallback (`sqlite:///test.db`). Never commit `.env` or credential files.
 
-```bash
-venv\Scripts\activate
-```
+4. Initialize the local database (if it does not already exist):
 
-Linux/macOS:
+   ```bash
+   python -c "from app import app; from models import db; app.app_context().push(); db.create_all()"
+   ```
 
-```bash
-source venv/bin/activate
-```
+5. Start the Flask development server:
 
-### 3. Install Dependencies
+   ```bash
+   python app.py
+   ```
 
-```bash
-pip install -r requirements.txt
-```
+6. Run the automated smoke test:
 
-### 4. Configure Environment Variables
+   ```bash
+   pytest
+   ```
 
-Create a `.env` file in the project directory and add the required environment variables:
+## Future improvements
 
-```text
-CLIENT_ID=your_kroger_client_id
-CLIENT_SECRET=your_kroger_client_secret
-app_secret_key=your_flask_secret_key
-DATABASE_URL=your_database_url
-SNS_TOPIC_ARN=your_sns_topic_arn
-```
+- Automate new EC2 bootstrapping with Terraform `user_data`/cloud-init or a configuration-management tool.
+- Add HTTPS and a domain name.
+- Expand pytest coverage to authentication, price-alert logic, database operations, and mock API calls.
+- Introduce database migrations with Flask-Migrate/Alembic.
+- Send user-specific notifications through Amazon SES instead of a shared SNS email subscription.
+- Containerize with Docker.
+- Add historical price charts and support additional grocery retailers.
 
-The Kroger API credentials can be obtained by creating an application through the Kroger Developer Portal.
+## Project status
 
-### 5. Create the Database
-
-For local development, the application can be configured to use SQLite:
-
-```python
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
-```
-
-Create the database tables using the Flask shell:
-
-```bash
-flask shell
-```
-
-Then run:
-
-```python
-db.create_all()
-exit()
-```
-
-### 6. Run the Application
-
-```bash
-flask run
-```
-
-The application will then be available on the local Flask development server.
-
-## Project Status
-
-Version 1.0 is complete. The AWS infrastructure used for the deployed version was removed after development and testing to avoid ongoing cloud costs.
-
-The repository contains the Flask application, Lambda price-checking code, database models, architecture documentation, and screenshots from the deployed AWS environment.
+**Portfolio project — core AWS architecture and CI/CD workflow tested.** The AWS environment was intentionally destroyed after validation to minimize costs, so there is no guaranteed live demo. The repository contains the application, Terraform configuration, Lambda implementation, deployment workflow, and screenshots.
